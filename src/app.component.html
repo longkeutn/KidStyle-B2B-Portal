@@ -1,0 +1,167 @@
+
+@if (!dataService.currentUser()) {
+  <app-login></app-login>
+} @else {
+  <div class="min-h-screen flex flex-col">
+    <!-- Navbar -->
+    <header class="bg-white sticky top-0 z-30 shadow-sm border-b border-gray-100 pb-2">
+      <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-bold">K</div>
+          <span class="font-bold text-xl text-gray-800 tracking-tight hidden sm:block">
+            KidStyle<span class="text-indigo-600">B2B</span>
+          </span>
+          <!-- Admin View Switcher -->
+          @if (dataService.currentUser()?.isAdmin) {
+             <div class="ml-4 flex bg-gray-100 rounded-lg p-1">
+                <button 
+                  (click)="switchView('shop')"
+                  class="px-3 py-1 text-xs font-bold rounded-md transition-all"
+                  [class.bg-white]="currentView() === 'shop'"
+                  [class.shadow-sm]="currentView() === 'shop'"
+                  [class.text-indigo-600]="currentView() === 'shop'"
+                  [class.text-gray-500]="currentView() !== 'shop'"
+                >Cửa hàng</button>
+                <button 
+                  (click)="switchView('admin')"
+                  class="px-3 py-1 text-xs font-bold rounded-md transition-all"
+                  [class.bg-white]="currentView() === 'admin'"
+                  [class.shadow-sm]="currentView() === 'admin'"
+                  [class.text-indigo-600]="currentView() === 'admin'"
+                  [class.text-gray-500]="currentView() !== 'admin'"
+                >Quản trị</button>
+             </div>
+          }
+        </div>
+        
+        <!-- Search Bar (Only for Shop View) -->
+        @if (currentView() === 'shop') {
+          <div class="flex-1 max-w-md relative hidden md:block">
+            <input 
+              type="text" 
+              (input)="updateSearch($event)"
+              placeholder="Tìm mã, màu hoặc tên sản phẩm..." 
+              class="w-full bg-gray-100 text-gray-800 rounded-full py-2.5 pl-10 pr-4 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all text-sm"
+            >
+            <svg class="absolute left-3.5 top-3 text-gray-400" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          </div>
+        } @else {
+           <div class="flex-1"></div> <!-- Spacer -->
+        }
+
+        <div class="flex items-center gap-2">
+           <!-- Logout / User Info -->
+           <div class="hidden md:flex flex-col items-end mr-2">
+              <span class="text-xs text-gray-500">Xin chào,</span>
+              <span class="text-sm font-bold text-gray-800 leading-none">
+                  {{dataService.currentUser()?.name}}
+                  @if(dataService.currentUser()?.isAdmin) { <span class="text-xs text-indigo-500">(Admin)</span> }
+              </span>
+           </div>
+           <button (click)="logout()" class="p-2 text-gray-400 hover:text-red-500 hover:bg-gray-100 rounded-full" title="Đăng xuất">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+           </button>
+
+          <!-- Cart Trigger (Desktop) - Only Shop View -->
+          @if (currentView() === 'shop') {
+            <button (click)="toggleCart()" class="relative p-2 hover:bg-gray-100 rounded-full transition-colors hidden sm:block">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-gray-700"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+              @if (dataService.cartCount() > 0) {
+                <span class="absolute top-0 right-0 bg-rose-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center border-2 border-white">
+                  {{dataService.cartCount()}}
+                </span>
+              }
+            </button>
+          }
+        </div>
+      </div>
+      
+      <!-- Filters Row (Only Shop View) -->
+      @if (currentView() === 'shop') {
+        <div class="max-w-7xl mx-auto px-4 flex gap-3 overflow-x-auto pb-1 text-sm">
+          <div class="flex items-center gap-2 bg-gray-50 px-3 py-1.5 rounded-lg border border-gray-200">
+             <span class="text-gray-500 text-xs font-bold uppercase tracking-wider">Tình trạng:</span>
+             <select (change)="updateStockFilter($event)" class="bg-transparent font-medium text-gray-700 focus:outline-none cursor-pointer">
+                <option value="in_stock" selected>Còn hàng</option>
+                <option value="all">Tất cả</option>
+             </select>
+          </div>
+
+          <div class="flex items-center gap-2 bg-gray-50 px-3 py-1.5 rounded-lg border border-gray-200">
+             <span class="text-gray-500 text-xs font-bold uppercase tracking-wider">Trạng thái:</span>
+             <select (change)="updateStatusFilter($event)" class="bg-transparent font-medium text-gray-700 focus:outline-none cursor-pointer">
+                <option value="active" selected>Đang hiện</option>
+                <option value="all">Hiển thị tất cả</option>
+             </select>
+          </div>
+        </div>
+      }
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 max-w-7xl mx-auto w-full">
+      @if (currentView() === 'admin') {
+         <!-- ADMIN DASHBOARD -->
+         <app-admin-dashboard></app-admin-dashboard>
+      } @else {
+         <!-- SHOP VIEW -->
+         <div class="px-4 py-6">
+            <!-- Hero / Promo -->
+            <div class="bg-gradient-to-r from-indigo-500 to-purple-600 rounded-2xl p-6 mb-8 text-white shadow-lg relative overflow-hidden">
+              <div class="relative z-10">
+                <h2 class="text-2xl font-bold mb-2">Bộ Sưu Tập Hè 2024</h2>
+                <p class="opacity-90 mb-4 text-sm max-w-md">Vải chất lượng cao cấp cho bé yêu. Đặt hàng ngay để nhận giá sỉ B2B độc quyền.</p>
+                <div class="inline-block bg-white/20 backdrop-blur px-3 py-1 rounded text-xs font-semibold">Đơn tối thiểu: 5.000.000₫</div>
+              </div>
+              <div class="absolute right-0 bottom-0 opacity-10 transform translate-x-10 translate-y-10">
+                <svg width="200" height="200" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L2 7l10 5 10-5-10-5zm0 9l2.5-1.25L12 8.5l-2.5 1.25L12 11zm0 2.5l-5-2.5-5 2.5L12 22l10-8.5-5-2.5-5 2.5z"/></svg>
+              </div>
+            </div>
+
+            <!-- Product Grid -->
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 pb-20">
+              @for (product of dataService.filteredProducts(); track product.code) {
+                <app-product-card 
+                  [product]="product">
+                </app-product-card>
+              }
+              @empty {
+                <div class="col-span-full py-12 text-center text-gray-500">
+                  <div class="inline-flex items-center justify-center w-16 h-16 bg-gray-100 rounded-full mb-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-gray-400"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                  </div>
+                  <h3 class="text-lg font-medium text-gray-800">Không tìm thấy sản phẩm</h3>
+                  <p class="text-gray-500 mt-1">Vui lòng điều chỉnh bộ lọc hoặc từ khóa tìm kiếm.</p>
+                </div>
+              }
+            </div>
+         </div>
+      }
+    </main>
+
+    <!-- Floating Cart Button (Mobile) - Only Shop View -->
+    @if (currentView() === 'shop') {
+      <button 
+        (click)="toggleCart()"
+        class="fixed bottom-6 right-6 z-40 bg-indigo-600 text-white p-4 rounded-full shadow-xl shadow-indigo-300 hover:bg-indigo-700 active:scale-95 transition-all sm:hidden flex items-center justify-center"
+        aria-label="Mở giỏ hàng">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+        @if (dataService.cartCount() > 0) {
+          <span class="absolute -top-1 -right-1 bg-rose-500 text-white text-xs font-bold w-6 h-6 flex items-center justify-center rounded-full border-2 border-white">
+            {{dataService.cartCount()}}
+          </span>
+        }
+      </button>
+    }
+
+    <!-- Cart Sidebar -->
+    @if (isCartOpen()) {
+      <app-cart-drawer></app-cart-drawer>
+    }
+
+    <!-- Product Detail Modal -->
+    @if (dataService.selectedProduct()) {
+      <app-product-detail></app-product-detail>
+    }
+  </div>
+}
